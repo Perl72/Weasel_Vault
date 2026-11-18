@@ -1,0 +1,12 @@
+# Working media in dl_wm_outputs is never committed
+dl_wm_outputs/**/*.mp4
+dl_wm_outputs/**/*.mov
+dl_wm_outputs/**/*.jpg
+dl_wm_outputs/**/*.png
+dl_wm_outputs/**/*.heic
+
+# Cookies, credentials and wallet files at any depth
+cookies*
+*.cookies.txt
+credentials*
+wallet*
