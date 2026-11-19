@@ -14,6 +14,8 @@ All commit messages in this repo were rewritten to drop the
 hashes above are the post-rewrite ones. Trees are unchanged from the originals
 (same content, same author `Perl Gonzales <perlgonzales72@gmail.com>`).
 
+John's remark on it: glad we could finally ditch Anthropic... omg.
+
 ---
 
 ## 2026-11-18 — 733d6b8 — include igp/cookies.py
