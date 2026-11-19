@@ -1,0 +1,116 @@
+# Weasel_Vault — changes
+
+Newest first. One block per commit that changed tracked content.
+Format: `## <date> — <short hash> — <subject>`, then what changed, why, and how
+it was checked. Local-only material that is deliberately never committed is
+listed under "Uncommitted"/"Not tracked".
+
+---
+
+## 2026-11-18 — <pending> — add CHANGES.log and Perl test harness
+
+This file (`CHANGES.log`) starts here: one block per commit that changes tracked
+content, newest first, with what changed, why, and how it was checked.
+
+Added the Perl harness around the download path under
+`scripts/perl_test_harness/`:
+
+    scripts/perl_test_harness/
+      README.md
+      ghost_soldier_test.pl     one-shot: preflight, download, verify, report
+      t/run_all.pl              ordered, resumable suite runner
+      t/00_env.t                python / yt-dlp / ffmpeg present and running
+      t/10_network.t            Instagram reachable
+      t/20_cookie_file.t        cookie file present, 0600, Netscape, has sessionid
+      t/30_session.t            cookie session resolves a logged-in profile
+      t/40_download.t           real download + SHA256 + output checks (slow)
+
+Why: a single happy-path download proves little; the harness states the
+preconditions and checks the artefacts, so a failure says which stage broke.
+Suite status at last run (2026-11-18): 00–30 pass, 40 fails with "No video
+formats found" for the test post.
+
+Checked:
+- `perl -c` on every script and test — syntax OK
+- `git ls-files scripts/perl_test_harness | grep -iE 'cookie|credential'`
+  — none; the harness reads a cookie path, it carries no cookie
+
+Not included: cookies, and the downloaded media/report the run produces.
+
+---
+
+## 2026-11-18 — 2699794 — add dl_wm scraper set
+
+Added the scripts that produced the vault's data, pinned as a copy of the public
+`roadshowpractice/dl_wm` (same layout, so relative imports work unchanged).
+
+    scripts/dl_wm_scrapers/
+      README.md
+      bin/collabnet.py          queue driver: scrape, resume, one graph at the end
+      bin/ig_collab_graph.py    account/co-post graph (png, html, edges.tsv, nodes.tsv)
+      bin/ig_word_sort.py       word sorts from captured captions
+      igp/__init__.py
+      igp/capture.py            single-post capture -> post model
+      igp/cookies.py            Netscape cookie loader
+      igp/download.py           media download
+      igp/extract.py            post/caption extraction
+      igp/profile_history.py    Playwright timeline scraper (resumable)
+      igp/select.py             post selection
+      lib/drive_check.py        output-drive writability check (uuid probe)
+
+Why: the vault is meant to carry the small text files *and* the scripts, not just
+their output — a scrape can then be re-run from what the vault records.
+
+Checked:
+- `python -m py_compile bin/*.py lib/*.py igp/*.py` — OK
+- `python -c "import igp.profile_history, igp.cookies, igp.extract"` — OK
+  (in the `dl_wm` env: playwright 1.65.2, Chromium 159.0.8154.6)
+- `git ls-tree -r --name-only 2699794 | grep -iE 'cookie|credential|wallet|token'`
+  — no cookie/credential files; `igp/cookies.py` is the loader, not a cookie
+
+Not included, on purpose: any cookie file or credentials, and any queue/input
+data (that lives under `inputs/`, untracked).
+
+---
+
+## 2026-11-18 — 9f38ed9 — initial layout
+
+`git init` plus the empty shape of the vault, mirroring John's `boner_vault`:
+
+    .gitignore          ignores working media under dl_wm_outputs/
+                        (mp4/mov/jpg/png/heic), plus cookies, credentials and
+                        wallet files at any depth
+    README.md           what the vault is, why, layout, disk-check rule
+    archive/.gitkeep        finished work, one folder per batch
+    dl_wm_outputs/.gitkeep  working area for new downloads and scrapes
+    metadata_backup/.gitkeep  copies of JSON/TSV metadata
+
+Why: raw captures stay separate from finished work, so a scrape can be re-run or
+dropped without touching the archive; git tracks the small text and ignores the
+heavy media.
+
+Checked: `git log --oneline`, `git status` clean, `sha256sum README.md .gitignore`
+recorded for the job.
+
+---
+
+## Uncommitted (local only, not in this repo)
+
+- `README.md` — `dl_wm_outputs/` renamed to `inputs/` throughout (the working
+  area is now `inputs/`). Edit lives in the worktree only.
+- `dl_wm_outputs/.gitkeep` — deleted locally to match.
+- `inputs/dh22_vids/` — 10 staged DH22-collab videos, 122 MB, with `SHA256SUMS`
+  and TSV manifests. Working media; stays on disk, not public.
+
+## Not tracked, by rule
+
+Media (`mp4`, `mov`, `jpg`, `png`, `heic`) under the working area, and any
+`cookies*`, `*.cookies.txt`, `credentials*` or `wallet*` file.
+
+---
+
+## Repo
+
+- Origin: https://github.com/Perl72/Weasel_Vault (public)
+- Branch: `master`
+- Identity: Perl Gonzales <perlgonzales72@gmail.com>
