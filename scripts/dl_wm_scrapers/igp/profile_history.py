@@ -1,0 +1,268 @@
+"""Paginate a public IG profile's timeline via GraphQL response sniffing,
+collecting {code, taken_at, caption, carousel_count} for every post reachable
+by scrolling. Independent of igp/capture.py's single-post capture flow, but
+shares its cookie loader.
+
+Usage:
+    python3 -m igp.profile_history <username> <cookie_file> <outdir> [max_rounds]
+
+Writes <outdir>/<username>_timeline.jsonl, one record per post, oldest first.
+"""
+import asyncio
+import json
+import random
+import re
+import sys
+from pathlib import Path
+
+from igp.cookies import load_netscape_cookies
+
+
+def extract_posts_from_json(obj, found, owner=None):
+    """Walk arbitrary nested JSON looking for post-like nodes.
+
+    The private-API timeline schema (xdt_api__v1__feed__user_timeline_graphql_connection)
+    keys the post id as "code" with caption/taken_at inline; older public
+    GraphQL schemas use "shortcode" with edge_media_to_caption. Support both.
+    """
+    if isinstance(obj, dict):
+        code = obj.get("code") or obj.get("shortcode")
+        post_owner = (obj.get("user") or obj.get("owner") or {}).get("username") if isinstance(obj.get("user") or obj.get("owner"), dict) else None
+        coauthors = [u.get("username") for k in ("coauthor_producers", "invited_coauthor_producers") for u in (obj.get(k) or []) if isinstance(u, dict)]
+        # Skip posts that belong to someone else (ads, "suggested for you",
+        # the Reels tray...). Without this check the scraper silently logged
+        # other accounts' posts as the target's (2026-09-24: "Muse" ads etc).
+        foreign = owner and post_owner and post_owner != owner and owner not in coauthors
+        if code and ("taken_at" in obj or "taken_at_timestamp" in obj) and not foreign:
+            taken = obj.get("taken_at") or obj.get("taken_at_timestamp")
+            caption = obj.get("caption")
+            if isinstance(caption, dict):
+                caption = caption.get("text", "")
+            elif caption is None:
+                edges = (obj.get("edge_media_to_caption") or {}).get("edges") or []
+                caption = edges[0]["node"]["text"] if edges else ""
+            carousel_count = obj.get("carousel_media_count") or len(obj.get("carousel_media") or []) or 0
+            collaborators = []
+            for k in ("coauthor_producers", "invited_coauthor_producers"):
+                for user in obj.get(k) or []:
+                    if isinstance(user, dict) and user.get("username"):
+                        collaborators.append(user["username"])
+            # the same post can show up in several responses, some with a
+            # lighter schema that omits coauthors — merge, never overwrite
+            prev = found.get(code)
+            if prev:
+                collaborators += prev["collaborators"]
+            found[code] = {
+                "shortcode": code,
+                "taken_at": taken,
+                "caption": (caption or "")[:200],
+                "carousel_count": carousel_count,
+                "collaborators": sorted(set(collaborators)),
+            }
+        for v in obj.values():
+            extract_posts_from_json(v, found, owner)
+    elif isinstance(obj, list):
+        for item in obj:
+            extract_posts_from_json(item, found, owner)
+
+
+BLOCKED_TEXT = "Sorry, this page isn't available"
+GRID_LINKS_JS = """[...document.querySelectorAll('a[href*="/p/"],a[href*="/reel/"]')].map(a => a.getAttribute('href'))"""
+
+
+def _fill_dates_with_ytdlp(found, shortcodes):
+    """For posts seen only as grid links (no JSON), get taken_at + caption
+    from yt-dlp's public metadata. Logged-out Instagram serves the profile
+    grid in the HTML, not via the GraphQL responses we sniff."""
+    try:
+        import yt_dlp
+    except ImportError:
+        print("WARNING: yt_dlp not importable; grid-only posts will have no date")
+        return
+    opts = {"quiet": True, "no_warnings": True, "skip_download": True}
+    with yt_dlp.YoutubeDL(opts) as ydl:
+        for code in shortcodes:
+            if code in found:
+                continue
+            try:
+                info = ydl.extract_info(f"https://www.instagram.com/reel/{code}/", download=False)
+            except Exception as exc:
+                print(f"  yt-dlp could not read {code}: {exc}")
+                continue
+            found[code] = {
+                "shortcode": code,
+                "taken_at": info.get("timestamp"),
+                "caption": (info.get("description") or "")[:200],
+                "carousel_count": 0,
+                "collaborators": [],
+            }
+            print(f"  +1 post via yt-dlp ({code})")
+
+
+# How the last scrape() in this process ended: "feed_end" (no new posts for stall_limit
+# rounds, i.e. complete), "max_rounds" (hit the cap: older posts were NOT reached),
+# "stop_before" (scrolled past the target date), or "logged_out" (latest ~12 only).
+LAST_END = None
+
+
+async def scrape(username, cookie_file, max_rounds=150, stall_limit=6, stop_before=None, pause=(1.5, 1.5), _logged_out=False, raw_sink=None):
+    """stop_before: optional epoch seconds. Once two scroll rounds in a row
+    bring in only posts older than this, stop — the feed is newest-first, so
+    nothing further down can be newer. (Pinned posts arrive in the initial
+    page load, before any scrolling, so they don't trip this.)
+    pause: (min, max) seconds to wait after each scroll, picked at random
+    each round — widen it to scrape more gently.
+    raw_sink: optional callable(record) receiving every Instagram data response
+    (graphql/api, json or javascript) unmodified, before any filtering:
+    {"url", "status", "content_type", "text"}. For evidence capture."""
+    from playwright.async_api import async_playwright
+    global LAST_END
+
+    found = {}
+    stall_rounds = 0
+    older_rounds = 0
+
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(
+            headless=True,
+            args=["--disable-gpu", "--single-process", "--no-zygote"],
+        )
+        context = await browser.new_context(
+            viewport={"width": 1024, "height": 800},
+            user_agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36",
+        )
+        # We only read JSON network responses, never render anything visually —
+        # blocking image/media/font/stylesheet loads cuts memory drastically
+        # (this machine has 3.2GB RAM total and a full Chromium render of IG's
+        # image-heavy grid was OOM-killing the scrape).
+        await context.route(
+            re.compile(r".*\.(png|jpg|jpeg|webp|gif|svg|woff2?|ttf|mp4)(\?.*)?$"),
+            lambda route: route.abort(),
+        )
+        cookies = [] if _logged_out else load_netscape_cookies(cookie_file)
+        if cookies:
+            await context.add_cookies(cookies)
+
+        page = await context.new_page()
+        network = []                        # what the sniffer saw, for a self-diagnosing 0
+
+        async def on_response(response):
+            try:
+                if "instagram.com" not in response.url:
+                    return
+                # 2026-09-26: profile-timeline pages (xdt_api__v1__feed__user_timeline_graphql_connection)
+                # now arrive labelled text/javascript, not application/json, so accept both.
+                ctype = response.headers.get("content-type", "")
+                if raw_sink is not None and "text/html" in ctype and \
+                        response.url.split("?")[0].rstrip("/").endswith("/" + username):
+                    # the profile page itself: follower/following/post counts as served
+                    raw_sink({"url": response.url, "status": response.status,
+                              "content_type": ctype, "text": await response.text()})
+                    return
+                if "json" not in ctype and "javascript" not in ctype:
+                    return
+                # 2026-10-27: the profile's posts now come from /api/graphql (PolarisProfilePostsQuery)
+                if "javascript" in ctype and not any(k in response.url for k in ("/graphql/query", "/api/graphql", "/api/v1/")):
+                    return  # plain JS bundles, not data
+                text = await response.text()
+                if raw_sink is not None:
+                    raw_sink({"url": response.url, "status": response.status,
+                              "content_type": ctype, "text": text})
+                if '"taken_at"' not in text:
+                    return
+                network.append({"url": response.url, "content_type": ctype, "head": text[:200]})
+                before = len(found)
+                extract_posts_from_json(json.loads(text.removeprefix("for (;;);")), found, username)
+                after = len(found)
+                if after > before:
+                    print(f"  +{after - before} posts (total {after})")
+            except Exception:
+                pass
+
+        page.on("response", on_response)
+
+        await page.goto(f"https://www.instagram.com/{username}/", wait_until="domcontentloaded", timeout=60000)
+        await asyncio.sleep(4)
+
+        # A logged-in account that the creator has blocked gets this page, and
+        # Instagram then fills the page with unrelated posts. Detect it and
+        # fall back to a logged-out scrape instead of recording junk.
+        page_text = await page.evaluate("document.body.innerText")
+        if BLOCKED_TEXT in page_text:
+            await browser.close()
+            if _logged_out:
+                print("Profile unavailable even logged out (deleted/renamed?)")
+                return {}
+            print("Profile not visible to this login (blocked?). Retrying logged out...")
+            return await scrape(username, cookie_file, max_rounds, stall_limit, stop_before, pause, _logged_out=True, raw_sink=raw_sink)
+
+        grid_codes = []
+
+        LAST_END = "max_rounds"
+        for i in range(max_rounds):
+            before_count = len(found)
+            for href in await page.evaluate(GRID_LINKS_JS):
+                m = re.search(r"/(?:p|reel)/([\w-]+)/", href or "")
+                if m and m.group(1) not in grid_codes and (f"/{username}/" in href or href.startswith(("/p/", "/reel/"))):
+                    grid_codes.append(m.group(1))
+            await page.mouse.wheel(0, 4000)
+            await asyncio.sleep(random.uniform(*pause))
+            print(f"round {i+1}/{max_rounds}: total={len(found)}")
+            if len(found) == before_count:
+                stall_rounds += 1
+            else:
+                stall_rounds = 0
+            if stall_rounds >= stall_limit:
+                print(f"no new posts for {stall_limit} rounds in a row, assuming end of feed")
+                LAST_END = "feed_end"
+                break
+            if stop_before is not None:
+                new = list(found.values())[before_count:]
+                if new:
+                    if all((r["taken_at"] or 0) < stop_before for r in new):
+                        older_rounds += 1
+                    else:
+                        older_rounds = 0
+                if older_rounds >= 2:
+                    print("scrolled past the target date, stopping")
+                    LAST_END = "stop_before"
+                    break
+
+        if not found:
+            print(f"diagnostic: {len(network)} JSON/JS responses, none parsed")
+            for rec in network[:20]:
+                print(f"  {rec['content_type']:35} {rec['url'][:100]}  {rec['head'][:80]!r}")
+        await browser.close()
+
+    if _logged_out:
+        LAST_END = "logged_out"
+    if _logged_out and grid_codes:
+        print(f"logged out: {len(grid_codes)} grid links; filling dates with yt-dlp")
+        _fill_dates_with_ytdlp(found, grid_codes)
+    elif _logged_out and not found:
+        print("WARNING: logged out and no grid links either — IG is likely showing a login wall; "
+              "use cookies from an account the creator hasn't blocked")
+
+    return found
+
+
+def main():
+    username = sys.argv[1]
+    cookie_file = Path(sys.argv[2])
+    outdir = Path(sys.argv[3])
+    max_rounds = int(sys.argv[4]) if len(sys.argv) > 4 else 150
+    outdir.mkdir(parents=True, exist_ok=True)
+
+    found = asyncio.run(scrape(username, cookie_file, max_rounds))
+
+    out_path = outdir / f"{username}_timeline.jsonl"
+    with open(out_path, "w") as f:
+        for rec in sorted(found.values(), key=lambda r: (r["taken_at"] or 0)):
+            f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+
+    print(f"\nTotal unique posts collected: {len(found)}")
+    print(f"Written to: {out_path}")
+
+
+if __name__ == "__main__":
+    main()
