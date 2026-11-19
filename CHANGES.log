@@ -7,7 +7,7 @@ listed under "Uncommitted"/"Not tracked".
 
 ---
 
-## 2026-11-18 — <pending> — include igp/cookies.py
+## 2026-11-18 — 46a8e47 — include igp/cookies.py
 
 Fix: `scripts/dl_wm_scrapers/igp/cookies.py` was missing from 2699794. The
 vault's own `.gitignore` ignores `cookies*` at any depth, which swallowed the
