@@ -7,9 +7,18 @@ listed under "Uncommitted"/"Not tracked".
 
 ---
 
-## 2026-11-18 — 46a8e47 — include igp/cookies.py
+## 2026-11-18 — history note — co-author trailer removed
 
-Fix: `scripts/dl_wm_scrapers/igp/cookies.py` was missing from 2699794. The
+All commit messages in this repo were rewritten to drop the
+`Co-Authored-By: Claude Haiku 5.5 <noreply@anthropic.com>` trailer, so the
+hashes above are the post-rewrite ones. Trees are unchanged from the originals
+(same content, same author `Perl Gonzales <perlgonzales72@gmail.com>`).
+
+---
+
+## 2026-11-18 — 733d6b8 — include igp/cookies.py
+
+Fix: `scripts/dl_wm_scrapers/igp/cookies.py` was missing from 42d71bb. The
 vault's own `.gitignore` ignores `cookies*` at any depth, which swallowed the
 cookie *loader* (a 63-line module, no cookie data). Without it `igp/profile_history.py`
 fails to import, so a fresh clone of the scraper set would not run.
@@ -23,7 +32,7 @@ script directory.
 
 ---
 
-## 2026-11-18 — 97084a6 — add CHANGES.log and Perl test harness
+## 2026-11-18 — ec4375e — add CHANGES.log and Perl test harness
 
 This file (`CHANGES.log`) starts here: one block per commit that changes tracked
 content, newest first, with what changed, why, and how it was checked.
@@ -55,7 +64,7 @@ Not included: cookies, and the downloaded media/report the run produces.
 
 ---
 
-## 2026-11-18 — 2699794 — add dl_wm scraper set
+## 2026-11-18 — 42d71bb — add dl_wm scraper set
 
 Added the scripts that produced the vault's data, pinned as a copy of the public
 `roadshowpractice/dl_wm` (same layout, so relative imports work unchanged).
@@ -81,7 +90,7 @@ Checked:
 - `python -m py_compile bin/*.py lib/*.py igp/*.py` — OK
 - `python -c "import igp.profile_history, igp.cookies, igp.extract"` — OK
   (in the `dl_wm` env: playwright 1.65.2, Chromium 159.0.8154.6)
-- `git ls-tree -r --name-only 2699794 | grep -iE 'cookie|credential|wallet|token'`
+- `git ls-tree -r --name-only 42d71bb | grep -iE 'cookie|credential|wallet|token'`
   — no cookie/credential files; `igp/cookies.py` is the loader, not a cookie
 
 Not included, on purpose: any cookie file or credentials, and any queue/input
@@ -89,7 +98,7 @@ data (that lives under `inputs/`, untracked).
 
 ---
 
-## 2026-11-18 — 9f38ed9 — initial layout
+## 2026-11-18 — aca124a — initial layout
 
 `git init` plus the empty shape of the vault, mirroring John's `boner_vault`:
 
