@@ -7,6 +7,22 @@ listed under "Uncommitted"/"Not tracked".
 
 ---
 
+## 2026-11-18 — <pending> — include igp/cookies.py
+
+Fix: `scripts/dl_wm_scrapers/igp/cookies.py` was missing from 2699794. The
+vault's own `.gitignore` ignores `cookies*` at any depth, which swallowed the
+cookie *loader* (a 63-line module, no cookie data). Without it `igp/profile_history.py`
+fails to import, so a fresh clone of the scraper set would not run.
+
+Now tracked explicitly (`git add -f`). The `.gitignore` rule itself is unchanged
+(the file is not ours to edit); the real cookie files are still excluded.
+
+Checked: `git ls-tree -r --name-only HEAD | grep igp/cookies` lists it, and
+`python -c "import igp.profile_history"` succeeds from a clean checkout of the
+script directory.
+
+---
+
 ## 2026-11-18 — 97084a6 — add CHANGES.log and Perl test harness
 
 This file (`CHANGES.log`) starts here: one block per commit that changes tracked
