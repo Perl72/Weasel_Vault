@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DH22 collab — data backend</title>
+<meta name="description" content="Metadata capture of the 28-account Dark Horse collaborator set: coverage, depth, co-post edges among the set, and the data files.">
+<style>
+ :root { --ink:#1d1f21; --muted:#5c6166; --rule:#d9dde1; --accent:#8a2b2b; --bg:#fbfaf7; --card:#14161a; --gold:#e8b64c; }
+ html { font-size:17px; }
+ body { margin:0 auto; padding:2.5rem 1.25rem 4rem; max-width:56rem; background:var(--bg); color:var(--ink); font-family:"DejaVu Serif", Georgia, "Times New Roman", serif; line-height:1.55; }
+ h1 { font-size:1.9rem; line-height:1.2; margin:0 0 .3rem; }
+ h2 { font-size:1.15rem; margin:2.2rem 0 .5rem; padding-bottom:.25rem; border-bottom:1px solid var(--rule); }
+ p, li { margin:.5rem 0; } ul { padding-left:1.3rem; }
+ .meta { color:var(--muted); font-size:.9rem; margin:0 0 1.6rem; }
+ .lead { font-size:1.02rem; }
+ code { font-family:"DejaVu Sans Mono", ui-monospace, monospace; font-size:.85em; background:#f1efe9; padding:.08em .3em; border-radius:3px; }
+ .stats { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; margin:1rem 0 1.4rem; }
+ .stat { background:var(--card); color:#f2efe6; border-radius:8px; padding:1.15rem 1.25rem 1.3rem; }
+ .stat .k { font-size:.68rem; letter-spacing:.18em; text-transform:uppercase; color:var(--gold); }
+ .stat .n { font-family:"DejaVu Serif", serif; font-size:2.4rem; line-height:1.1; margin:.35rem 0 .2rem; color:#fff; }
+ .stat .d { font-size:.92rem; color:#d8d4c9; }
+ .stat .x { font-size:.76rem; color:#9d9a92; margin-top:.35rem; }
+ table { border-collapse:collapse; width:100%; margin:.8rem 0; font-size:.88rem; }
+ th, td { text-align:left; padding:.32rem .55rem; border-bottom:1px solid var(--rule); }
+ th { color:var(--muted); font-weight:600; }
+ td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; }
+ td.sha { color:var(--muted); font-family:"DejaVu Sans Mono", monospace; font-size:.78rem; }
+ .note { border-left:3px solid var(--accent); padding:.1rem 0 .1rem .9rem; color:var(--muted); }
+ footer { margin-top:3rem; padding-top:1rem; border-top:1px solid var(--rule); color:var(--muted); font-size:.85rem; }
+ a { color:#1f4e79; }
+ @media (max-width:46rem) { .stats { grid-template-columns:1fr 1fr; } }
+ @media (max-width:30rem) { .stats { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<h1>DH22 collab — data backend</h1>
+<p class="meta">2026-11-19 · 28 accounts · 27 captured · 27,780 posts</p>
+<p class="lead">Who co-posts with whom in the Dark Horse set, captured as metadata only. This page is a snapshot of the data module; the files behind it are in <a href="data/dh22-collab/">data/dh22-collab/</a>.</p>
+<div class="stats">
+<div class="stat"><div class="k">The set</div><div class="n">28</div><div class="d">accounts in the Dark Horse set</div><div class="x">not the rigid grid (113), not S16 (16)</div></div>
+<div class="stat"><div class="k">Captured</div><div class="n">27 / 28</div><div class="d">accounts with a timeline</div><div class="x">27,780 posts · captures 11-18 and 11-19</div></div>
+<div class="stat"><div class="k">Depth</div><div class="n">14 · 6 · 7</div><div class="d">deep · sweep · complete</div><div class="x">150 rounds · 50-round sweep · small feeds ended</div></div>
+<div class="stat"><div class="k">Throughput</div><div class="n">4.2 min</div><div class="d">per account, about 14 an hour</div><div class="x">down from about 16 min</div></div>
+<div class="stat"><div class="k">Queue</div><div class="n">28 / 1,336</div><div class="d">seeds in the walk · snowballed parked</div><div class="x">snowball is a separate later queue</div></div>
+<div class="stat"><div class="k">Provenance</div><div class="n">62 files</div><div class="d">text only, hashed</div><div class="x">SHA256SUMS over the local module</div></div>
+</div>
+<h2>The set</h2>
+<p>Dark Horse is its own multiset: <strong>28 accounts</strong>. It is not the rigid grid (113 accounts) and not S16/holland24 (16). Membership here means a direct co-post with the group (depth one); a partner's partner is association and is not in these tables.</p>
+<table>
+ <thead><tr><th>account</th><th class="num">posts</th><th>depth</th><th>sha256 (12)</th></tr></thead>
+ <tbody>
+<tr><td><code>47contadoallan</code></td><td class="num">1,788</td><td>150 rounds</td><td class="sha">13d6e5c14535</td></tr>
+<tr><td><code>4ludlins</code></td><td class="num">48</td><td>complete</td><td class="sha">c9a84be21210</td></tr>
+<tr><td><code>_revistatimeline</code></td><td class="num">1,800</td><td>150 rounds</td><td class="sha">ae8e751064e6</td></tr>
+<tr><td><code>americatv</code></td><td class="num">36</td><td>complete</td><td class="sha">a1133f435713</td></tr>
+<tr><td><code>biakicis</code></td><td class="num">1,800</td><td>150 rounds</td><td class="sha">278f73e734bb</td></tr>
+<tr><td><code>carlosjordy</code></td><td class="num">1,800</td><td>150 rounds</td><td class="sha">87ca95c1d8ac</td></tr>
+<tr><td><code>cristianosenpolitica</code></td><td class="num">1,478</td><td>150 rounds</td><td class="sha">945977977a75</td></tr>
+<tr><td><code>damaresalvesoficial</code></td><td class="num">1,800</td><td>150 rounds</td><td class="sha">3ca23a0f5ec0</td></tr>
+<tr><td><code>dignidadyderecho</code></td><td class="num">221</td><td>complete</td><td class="sha">bfe08d8d0287</td></tr>
+<tr><td><code>eduardoverastegui</code></td><td class="num">1,800</td><td>150 rounds</td><td class="sha">22bc4de526b5</td></tr>
+<tr><td><code>emilia_maldonadojaramillo</code></td><td class="num">847</td><td>150 rounds</td><td class="sha">b2b407532ea1</td></tr>
+<tr><td><code>freedomcenterlu</code></td><td class="num">1,800</td><td>150 rounds</td><td class="sha">2b098379b8f9</td></tr>
+<tr><td><code>generalgirao</code></td><td class="num">1,800</td><td>150 rounds</td><td class="sha">6d0126bb7315</td></tr>
+<tr><td><code>gusgayer</code></td><td class="num">1,800</td><td>150 rounds</td><td class="sha">296f38682744</td></tr>
+<tr><td><code>herzog_foundation</code></td><td class="num">1,157</td><td>150 rounds</td><td class="sha">d692be39f4c5</td></tr>
+<tr><td><code>janethinostrozaok</code></td><td class="num">1,571</td><td>150 rounds</td><td class="sha">27c83d3770a1</td></tr>
+<tr><td><code>jorgeseifjunior</code></td><td class="num">1,800</td><td>150 rounds</td><td class="sha">14c398499e7e</td></tr>
+<tr><td><code>laisjordy</code></td><td class="num">12</td><td>complete</td><td class="sha">9c76d98aaf4e</td></tr>
+<tr><td><code>lilipacheco.usa</code></td><td class="num">599</td><td>50 rounds</td><td class="sha">3425b2e6f7a7</td></tr>
+<tr><td><code>mareannl</code></td><td class="num">0</td><td>missing</td><td class="sha">—</td></tr>
+<tr><td><code>mariofriasoficial</code></td><td class="num">600</td><td>50 rounds</td><td class="sha">d541d4cac73d</td></tr>
+<tr><td><code>momsforamerica</code></td><td class="num">600</td><td>50 rounds</td><td class="sha">10aab8c4eb5b</td></tr>
+<tr><td><code>pabloaproano</code></td><td class="num">42</td><td>complete</td><td class="sha">a854a4b4c794</td></tr>
+<tr><td><code>paolafelixdiaz</code></td><td class="num">600</td><td>50 rounds</td><td class="sha">565ed71bd2a2</td></tr>
+<tr><td><code>rolando_gps</code></td><td class="num">275</td><td>complete</td><td class="sha">a58be0aa0e71</td></tr>
+<tr><td><code>timballard89</code></td><td class="num">600</td><td>50 rounds</td><td class="sha">b47d7f13461d</td></tr>
+<tr><td><code>timballardfoundationecuador</code></td><td class="num">506</td><td>complete</td><td class="sha">bacd6606d281</td></tr>
+<tr><td><code>verosevillaec</code></td><td class="num">600</td><td>50 rounds</td><td class="sha">b09e608c61c1</td></tr>
+ </tbody>
+ <tfoot><tr><td>27 captured</td><td class="num">27,780</td><td colspan="2">one seed missing: <code>mareannl</code></td></tr></tfoot>
+</table>
+<h2>What is in the data directory</h2>
+<ul>
+ <li><a href="data/dh22-collab/accounts.tsv">accounts.tsv</a> — the 28-set with posts, depth and capture hash.</li>
+ <li><a href="data/dh22-collab/edges_28.tsv">edges_28.tsv</a> — co-post edges where both ends are in the set.</li>
+ <li><a href="data/dh22-collab/nodes_28.tsv">nodes_28.tsv</a> — partners and shared posts inside the set.</li>
+ <li><a href="data/dh22-collab/queue.txt">queue.txt</a>, <a href="data/dh22-collab/capped.txt">capped.txt</a> — the 28 seeds, and the 15 that hit the scroll cap.</li>
+ <li><a href="data/dh22-collab/README.md">README.md</a> — how it was made, counts, limits. <a href="data/dh22-collab/SHA256SUMS">SHA256SUMS</a> covers the files.</li>
+</ul>
+<h2>Method</h2>
+<p>One account at a time with <code>dl_wm</code>'s <code>collabnet</code>: scrape the timeline, write the word sort, move on. The per-scroll pause (3–6 s) is the rate limit; the account boundary is a short jittered pause, not a second one. Two empty or blocked accounts in a row widen the interval and are re-queued once; five in a row stop the run.</p>
+<p>Two depths: a <code>--sweep</code> pass at 50 rounds (about 600 posts) and a <code>--deep</code> pass at 600 rounds for accounts that hit the cap. Snowballed collaborators go to a separate queue, so a pass finishes the set it was given.</p>
+<h2>Limits</h2>
+<p class="note">Partial and mixed: one seed has no capture, the sweep captures hold about 600 posts each, and the rest go to 1,800. Edge counts are lower bounds and are not comparable across accounts. Live data changes between captures — these files are the snapshot. The whole-walk graph (1,600 accounts, 1,974 links) is not published here because it is not the 28-set.</p>
+<h2>Source</h2>
+<p>The module, including the raw metadata captures and their hashes, is in <a href="https://github.com/Perl72/Weasel_Vault/blob/master/archive/dh22_start/collab/PROJECT.md">Weasel_Vault</a>. Captured with <code>dl_wm/collabnet</code> (<code>igp/profile_history.py</code>). No media, no captions published.</p>
+<footer>Snapshot 2026-11-19. Captures are the data; web material is context only.</footer>
+</body>
+</html>
