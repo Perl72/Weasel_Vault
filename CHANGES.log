@@ -7,7 +7,7 @@ listed under "Uncommitted"/"Not tracked".
 
 ---
 
-## 2026-11-18 — <pending> — add CHANGES.log and Perl test harness
+## 2026-11-18 — 97084a6 — add CHANGES.log and Perl test harness
 
 This file (`CHANGES.log`) starts here: one block per commit that changes tracked
 content, newest first, with what changed, why, and how it was checked.
